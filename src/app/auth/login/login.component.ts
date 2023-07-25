@@ -1,57 +1,35 @@
-import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-
-import Swal from 'sweetalert2'
-import { AuthService } from '../../services/auth.service';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { AuthService } from '../auth.service';
+import { Store } from '@ngrx/store';
+import { AppState } from '../../app.reducer';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
   styles: []
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
 
-  loginForm: FormGroup;
+  cargando: boolean;
+  subscription: Subscription;
 
-
-  constructor( private fb: FormBuilder,
-               private authService: AuthService,
-               private router: Router ) { }
+  constructor( public authService: AuthService,
+               private store: Store<AppState> ) { }
 
   ngOnInit() {
-    this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required ],
-    });
+
+    this.subscription = this.store.select('ui')
+                        .subscribe( ui => this.cargando = ui.isLoading );
   }
 
-  login() {
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
+  }
 
-    if ( this.loginForm.invalid ) { return; }
+  onSubmit( data: any ) {
 
-    Swal.fire({
-      title: 'Espere por favor',
-      onBeforeOpen: () => {
-        Swal.showLoading()
-      }
-    });
-
-    const { email, password } = this.loginForm.value;
-
-    this.authService.loginUsuario( email, password )
-      .then( credenciales => {
-        console.log(credenciales);
-        Swal.close();
-        this.router.navigate(['/']);
-      })
-      .catch( err => {
-        Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: err.message
-        })
-      });
+    this.authService.login( data.email, data.password );
 
   }
 

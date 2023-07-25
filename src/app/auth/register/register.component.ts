@@ -1,62 +1,33 @@
-import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-
-import Swal from 'sweetalert2';
-import { AuthService } from '../../services/auth.service';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { AuthService } from '../auth.service';
+import { Store } from '@ngrx/store';
+import { AppState } from '../../app.reducer';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-register',
   templateUrl: './register.component.html',
   styles: []
 })
-export class RegisterComponent implements OnInit {
+export class RegisterComponent implements OnInit, OnDestroy {
 
-  registroForm: FormGroup;
+  cargando: boolean;
+  subscription: Subscription = new Subscription();
 
-  constructor( private fb: FormBuilder,
-               private authService: AuthService,
-               private router: Router) { }
+  constructor( public authService: AuthService,
+               public store: Store<AppState> ) { }
 
   ngOnInit() {
-
-    this.registroForm = this.fb.group({
-      nombre:   ['', Validators.required ],
-      correo:   ['', [Validators.required, Validators.email ] ],
-      password: ['', Validators.required ],
-    });
-
+    this.store.select('ui')
+        .subscribe( ui => this.cargando = ui.isLoading );
   }
 
-  crearUsuario() {
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
+  }
 
-    if ( this.registroForm.invalid ) { return; }
-    
-    Swal.fire({
-      title: 'Espere por favor',
-      onBeforeOpen: () => {
-        Swal.showLoading()
-      }
-    });
-
-
-    const { nombre, correo, password } = this.registroForm.value;
-
-    this.authService.crearUsuario( nombre, correo, password )
-      .then( credenciales => {
-        console.log(credenciales);
-
-        Swal.close();
-
-        this.router.navigate(['/']);
-      })
-      .catch( err => {
-        Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: err.message
-        })
-      });
+  onSubmit( data: any ) {
+    this.authService.crearUsuario( data.nombre, data.email, data.password );
   }
 
 }

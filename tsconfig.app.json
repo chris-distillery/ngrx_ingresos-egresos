@@ -6,7 +6,8 @@
   },
   "files": [
     "src/main.ts",
-    "src/polyfills.ts"
+    "src/polyfills.ts",
+    "src/app/ingreso-egreso/ingreso-egreso.module.ts",
   ],
   "include": [
     "src/**/*.d.ts"
